@@ -87,27 +87,13 @@ void buscarEstudiante(const std::unordered_map<std::string, Estudiante>& estudia
     std::cout << it->second << "\n";
 }
 
-void eliminarEstudiante(std::unordered_map<std::string, Estudiante>& estudiantes,
-                        const ColaPrioridad<Solicitud>& solicitudes, Pila<std::string>& historial) {
+void eliminarEstudiante(std::unordered_map<std::string, Estudiante>& estudiantes, Pila<std::string>& historial) {
     std::string codigo = leerLinea("Codigo a eliminar: ");
     auto it = estudiantes.find(codigo);
     if (it == estudiantes.end()) {
         std::cout << "No se encontro ningun estudiante con ese codigo.\n";
         return;
     }
-
-    // Regla de integridad: si el estudiante tiene alguna solicitud aun
-    // pendiente en el Max-Heap, no se permite eliminarlo (quedaria una
-    // Solicitud "huerfana" referenciando a un codigo inexistente).
-    bool tienePendientes = solicitudes.existe([&codigo](const Solicitud& s) {
-        return s.getCodigoEstudiante() == codigo;
-    });
-    if (tienePendientes) {
-        std::cout << "Error: el estudiante " << codigo << " tiene solicitudes pendientes. "
-                  << "Debe atenderlas (opcion 5 del menu principal) antes de eliminarlo.\n";
-        return;
-    }
-
     estudiantes.erase(it);
     std::cout << "Estudiante eliminado.\n";
     registrarAccion(historial, "Estudiante eliminado: codigo " + codigo);
@@ -123,8 +109,7 @@ void listarEstudiantes(const std::unordered_map<std::string, Estudiante>& estudi
     }
 }
 
-void menuEstudiantes(std::unordered_map<std::string, Estudiante>& estudiantes,
-                     const ColaPrioridad<Solicitud>& solicitudes, Pila<std::string>& historial) {
+void menuEstudiantes(std::unordered_map<std::string, Estudiante>& estudiantes, Pila<std::string>& historial) {
     int opcion = -1;
     while (opcion != 0) {
         std::cout << "\n-- Gestion de Estudiantes --\n";
@@ -133,7 +118,7 @@ void menuEstudiantes(std::unordered_map<std::string, Estudiante>& estudiantes,
         switch (opcion) {
             case 1: registrarEstudiante(estudiantes, historial); break;
             case 2: buscarEstudiante(estudiantes); break;
-            case 3: eliminarEstudiante(estudiantes, solicitudes, historial); break;
+            case 3: eliminarEstudiante(estudiantes, historial); break;
             case 4: listarEstudiantes(estudiantes); break;
             case 0: break;
             default: std::cout << "Opcion invalida.\n";
@@ -261,30 +246,15 @@ void buscarRecurso(const ListaEnlazada<Recurso>& recursos) {
 
 void eliminarRecurso(ListaEnlazada<Recurso>& recursos, Pila<std::string>& historial) {
     std::string codigo = leerLinea("Codigo a eliminar: ");
-    Nodo<Recurso>* nodoRecurso = recursos.buscar([&codigo](const Recurso& r) {
+    bool ok = recursos.eliminar([codigo](const Recurso& r) {
         return r.getCodigo() == codigo;
     });
-    if (nodoRecurso == nullptr) {
+    if (ok) {
+        std::cout << "Recurso eliminado.\n";
+        registrarAccion(historial, "Recurso eliminado: codigo " + codigo);
+    } else {
         std::cout << "No se encontro ningun recurso con ese codigo.\n";
-        return;
     }
-
-    // Regla de integridad: mismo criterio que ya usa registrarSolicitud().
-    // Si el recurso no esta Disponible es porque esta reservado (Ocupado)
-    // por una solicitud pendiente; eliminarlo dejaria esa solicitud
-    // apuntando a un recurso inexistente.
-    if (nodoRecurso->dato.getEstado() != "Disponible") {
-        std::cout << "Error: el recurso " << codigo << " no se puede eliminar porque no esta Disponible "
-                  << "(estado actual: " << nodoRecurso->dato.getEstado() << "). "
-                  << "Atienda o libere la reserva (opcion 5) antes de eliminarlo.\n";
-        return;
-    }
-
-    recursos.eliminar([&codigo](const Recurso& r) {
-        return r.getCodigo() == codigo;
-    });
-    std::cout << "Recurso eliminado.\n";
-    registrarAccion(historial, "Recurso eliminado: codigo " + codigo);
 }
 
 void liberarRecurso(ListaEnlazada<Recurso>& recursos, Pila<std::string>& historial) {
@@ -466,7 +436,7 @@ int main() {
         opcion = leerEntero("Opcion: ");
 
         switch (opcion) {
-            case 1: menuEstudiantes(estudiantes, solicitudes, historial); break;
+            case 1: menuEstudiantes(estudiantes, historial); break;
             case 2: menuCursos(cursos, historial); break;
             case 3: menuRecursos(recursos, historial); break;
             case 4: registrarSolicitud(solicitudes, estudiantes, recursos, contadorSolicitudes, historial); break;
