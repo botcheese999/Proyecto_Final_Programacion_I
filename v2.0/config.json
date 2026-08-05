@@ -1,0 +1,11 @@
+{
+    "longitud_minima_nombre": 2,
+    "longitud_minima_semestre": 1,
+    "prioridad_maxima": 5,
+    "estados_validos_recurso": ["Disponible", "Ocupado", "Mantenimiento"],
+    "ruta_estudiantes": "data/estudiantes.csv",
+    "ruta_cursos": "data/cursos.csv",
+    "ruta_recursos": "data/recursos.csv",
+    "ruta_solicitudes": "data/solicitudes.csv",
+    "ruta_historial": "data/historial.csv"
+}
